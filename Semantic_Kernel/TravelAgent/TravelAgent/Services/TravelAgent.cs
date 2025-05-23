@@ -2,9 +2,9 @@ using Microsoft.SemanticKernel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using TravekAgent.Models;
+using TravelAgents.Models;
 
-namespace TravekAgent.Services;
+namespace TravelAgents.Services;
 
 public class TravelAgent
 {

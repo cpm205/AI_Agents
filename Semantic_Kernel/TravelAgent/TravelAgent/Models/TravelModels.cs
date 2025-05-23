@@ -1,4 +1,4 @@
-namespace TravekAgent.Models;
+namespace TravelAgents.Models;
 
 public class City
 {

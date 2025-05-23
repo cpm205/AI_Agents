@@ -1,6 +1,6 @@
 using Microsoft.SemanticKernel;
 
-namespace TravekAgent.Models;
+namespace TravelAgents.Models;
 
 public class ConversationMemory
 {

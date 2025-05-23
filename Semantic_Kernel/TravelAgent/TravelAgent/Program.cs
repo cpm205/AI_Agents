@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
-using TravekAgent.Models;
-using TravekAgent.Services;
+using TravelAgents.Models;
+using TravelAgents.Services;
 using Microsoft.Extensions.Configuration;
 
 // Create a cancellation token source that we can use to keep the program running
