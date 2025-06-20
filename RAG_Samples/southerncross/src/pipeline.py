@@ -1,9 +1,11 @@
-#1. Document/Text Processing and Embedding Creation
-#Steps:
-    #1.Import PDF document.
-    #2.Process text for embedding (e.g. split into chunks of sentences).
-    #3.Embed text chunks with embedding model.
-    #4.Save embeddings to file for later use (embeddings will store on file for many years or until you lose your hard drive).
+"""
+1. Load a PDF document
+2. Text splitting/chunking - Format the text of the PDF textbook ready for an embedding model.
+3. Embed all of the chunks of text in the textbook and turn them into numerical representation which we can store for later.
+4. Build a retrieval system that uses vector search to find relevant chunks of text based on a query.
+5. Create a prompt that incorporates the retrieved pieces of text.
+6. Generate an answer to a query based on passages from the textbook.
+"""
 
 import os
 import fitz 
@@ -25,6 +27,7 @@ def text_formatter(text: str) -> str:
     # Other potential text formatting functions can go here
     return cleaned_text
 
+#1. Load a PDF document
 # Open PDF and get lines/pages
 def open_and_read_pdf(pdf_path: str) -> list[dict]:
     """
@@ -67,10 +70,15 @@ df = pd.DataFrame(pages_and_texts)
 print(df.head())
 print(df.describe().round(2))
 
+# How to choose the right embedding model?
+# Consider the size of the text you want to embed. Because both embedding models and LLM cannot deal with infinite tokens.
+# Some embedding models may have been trained to embedd a sequence of 384 tokens into numeric space, 
+# if we pass anything more than 384 tokens, it will be truncated, which means we will lose some information.
+# Please use this link https://huggingface.co/spaces/mteb/leaderboard to find the right embedding model for your use case.
 # Because the average token count per page is 287, it means we could embed an average whole page with the all-mpnet-base-v2 model 
 # as this model has an input capacity of 384.
 
-# Text Processing - splitting pages into sentences
+# 2. Text splitting/chunking
 # The ideal way of processing text before embedding it is still an active area of research.
 # A simple method I've found helpful is to break the text into chunks of sentences.
 # As in, chunk a page of text into groups of 5, 7, 10 or more sentences (these values are not set in stone and can be explored).
@@ -87,7 +95,7 @@ print(df.describe().round(2))
 # Let's use spaCy to break our text into sentences.
 # spaCy is an open-source library designed to break the text into sentences for NLP tasks.
 nlp = English()
-# Add a sentencizer pipeline, see https://spacy.io/api/sentencizer/ 
+# Add a sentencizer pipeline. Sentencizer is a pipeline component that turn text into sentences.
 nlp.add_pipe("sentencizer")
 for item in tqdm(pages_and_texts):
     item["sentences"] = list(nlp(item["text"]).sents)
@@ -99,7 +107,13 @@ for item in tqdm(pages_and_texts):
 # Inspect an example
 print(random.sample(pages_and_texts, k=1))
 
-# Let's turn out list of dictionaries into a DataFrame and get some stats.
 # The output shows our raw sentence count (e.g. splitting on ". ") is quite close to what spaCy came up with.
 df = pd.DataFrame(pages_and_texts)
 print(df.describe().round(2))
+
+
+# Chunking the sentences
+
+
+ 
+
