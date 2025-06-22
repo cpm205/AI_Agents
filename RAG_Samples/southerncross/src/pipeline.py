@@ -61,22 +61,12 @@ print("First two pages of processed text:")
 print(pages_and_texts[:2])
 
 # Perform the exploratory data analysis (EDA) to get an idea of the size of the texts (e.g. character counts, word counts etc)
-# The different sizes of texts will be a good indicator into how we should split our texts.
-# Many embedding models have limits on the size of texts they can ingest, 
-# for example, the sentence-transformers model all-mpnet-base-v2 has an input size of 384 tokens.
-# This means that the model has been trained in ingest and turn into embeddings texts with 384 tokens (1 token ~= 4 characters ~= 0.75 words).
-# Texts over 384 tokens which are encoded by this model will be auotmatically reduced to 384 tokens in length, potentially losing some information.
+# We need to pay attention to the token count of per page, because some embedding models have limits on the size of texts they can ingest.
 df = pd.DataFrame(pages_and_texts)
+print("\n")
 print(df.head())
+print("\n")
 print(df.describe().round(2))
-
-# How to choose the right embedding model?
-# Consider the size of the text you want to embed. Because both embedding models and LLM cannot deal with infinite tokens.
-# Some embedding models may have been trained to embedd a sequence of 384 tokens into numeric space, 
-# if we pass anything more than 384 tokens, it will be truncated, which means we will lose some information.
-# Please use this link https://huggingface.co/spaces/mteb/leaderboard to find the right embedding model for your use case.
-# Because the average token count per page is 287, it means we could embed an average whole page with the all-mpnet-base-v2 model 
-# as this model has an input capacity of 384.
 
 # 2. Text splitting/chunking
 # The ideal way of processing text before embedding it is still an active area of research.
@@ -92,7 +82,8 @@ print(df.describe().round(2))
 # 1. Easier to handle than larger pages of text (especially if pages are densely filled with text).
 # 2. Can get specific and find out which group of sentences were used to help within a RAG pipeline.
 
-# Let's use spaCy to break our text into sentences.
+print("\n")
+print("Splitting the text into sentences...\n")
 # spaCy is an open-source library designed to break the text into sentences for NLP tasks.
 nlp = English()
 # Add a sentencizer pipeline. Sentencizer is a pipeline component that turn text into sentences.
@@ -106,14 +97,43 @@ for item in tqdm(pages_and_texts):
 
 # Inspect an example
 print(random.sample(pages_and_texts, k=1))
-
 # The output shows our raw sentence count (e.g. splitting on ". ") is quite close to what spaCy came up with.
 df = pd.DataFrame(pages_and_texts)
+print("\n")
+print("Statistics after sentence splitting...")
 print(df.describe().round(2))
 
+# Chunking - Break down our list of sentences/text into smaller chunks.
+# Why do we do this?
+# 1. Easier to filter for RAG queries.
+# 2. The text chunks can fit into the context window of the embedding model.
+# 3. Framework such as Langchain which can help us with chunking as well.
 
-# Chunking the sentences
+# Define split size to turn a group of sentences into a chunk of text.
+num_sentences_per_chunk = 10 # 10 is arbitrary number, we can change it to 5, 7, 8.
+# Create a function to chunk the text
+def split_list(input_list: list[str], slice_size: int) -> list[str]:
+    return [input_list[i: i + slice_size] for i in range(0, len(input_list), slice_size)]
 
+# Loop through pages and texts and split sentences into chunks
+print("\n")
+print("Chuncking the text...\n")
+for item in tqdm(pages_and_texts):
+    item["sentence_chunks"] = split_list(input_list = item["sentences"], slice_size = num_sentences_per_chunk)
+    item["num_chunks"] = len(item["sentence_chunks"])
 
+print(random.sample(pages_and_texts, k=1))
+
+print("\n")
+print("Statistics after chunking...")
+df = pd.DataFrame(pages_and_texts)
+print(df.describe().round(2))
  
-
+# 3. Embedding the chunks of text
+# How to choose the right embedding model?
+# Consider the size of the text you want to embed. Because both embedding models and LLM cannot deal with infinite tokens.
+# Some embedding models may have been trained to embedd a sequence of 384 tokens into numeric space, 
+# if we pass anything more than 384 tokens, it will be truncated, which means we will lose some information.
+# Please use this link https://huggingface.co/spaces/mteb/leaderboard to find the right embedding model for your use case.
+# Because the average token count per page is 287, it means we could embed an average whole page with the all-mpnet-base-v2 model 
+# as this model has an input capacity of 384.
