@@ -1,2 +1,5 @@
 PyMuPDF
-tqdm 
+tqdm
+sentence-transformers
+pandas
+spacy 
