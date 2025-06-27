@@ -1,7 +1,7 @@
 """
 1. Load a PDF document
 2. Text splitting/chunking - Format the text of the PDF textbook ready for an embedding model.
-3. Embed all of the chunks of text in the textbook and turn them into numerical representation which we can store for later.
+3. Embed all of the chunks of text and turn them into the numerical representation - Vectors.
 4. Build a retrieval system that uses vector search to find relevant chunks of text based on a query.
 5. Create a prompt that incorporates the retrieved pieces of text.
 6. Generate an answer to a query based on passages from the textbook.
@@ -11,14 +11,11 @@ import os
 import fitz 
 from tqdm.auto import tqdm # for progress bars, requires !pip install tqdm 
 import pandas as pd
-from spacy.lang.en import English
 import random
-import spacy
 import re
 from sentence_transformers import SentenceTransformer
-
-# Load the English language model
-nlp = spacy.load('en_core_web_sm')
+import spacy
+from spacy.lang.en import English
 
 # Pre-processing the text
 def text_formatter(text: str) -> str:
@@ -88,6 +85,8 @@ print(df.describe().round(2))
 print("\n")
 print("2. Splitting the text into sentences...\n")
 # spaCy is an open-source library designed to break the text into sentences for NLP tasks.
+# Load the English language model
+nlp = spacy.load('en_core_web_sm')
 nlp = English()
 # Add a sentencizer pipeline. Sentencizer is a pipeline component that turn text into sentences.
 nlp.add_pipe("sentencizer")
@@ -100,7 +99,7 @@ for item in tqdm(pages_and_texts):
 
 # Inspect an example
 print(random.sample(pages_and_texts, k=1))
-# The output shows our raw sentence count (e.g. splitting on ". ") is quite close to what spaCy came up with.
+# The output shows our raw sentence count (e.g. splitting on ". ? ! ") is quite close to what spaCy came up with.
 df = pd.DataFrame(pages_and_texts)
 print("\n")
 print("Statistics after sentence splitting...")
@@ -162,7 +161,7 @@ print(df.describe().round(2))
 # What is embedding?
 # Embedding is a way to turn text into a numerical representation - vector that can be used by LLM models.
 # Embeddings of text will mean that similar meaning texts have similar numerical representation.
-# Please note once our text samples are in embedding vectors, us humans will no longer be able to understand them.
+# Please note once our text samples are in embedding vectors, humans will no longer be able to understand them.
 
 # How to choose the right embedding model?
 # Consider the size of the text you want to embed. Because both embedding models and LLM cannot deal with infinite tokens.
