@@ -1,6 +1,6 @@
 """
 1. Load a PDF document
-2. Text splitting/chunking - Format the text of the PDF textbook ready for an embedding model.
+2. Split the text into chunks of sentences
 3. Embed all of the chunks of text and turn them into the numerical representation - Vectors.
 4. Build a retrieval system that uses vector search to find relevant chunks of text based on a query.
 5. Create a prompt that incorporates the retrieved pieces of text.
@@ -68,22 +68,88 @@ print(df.head())
 print("\n")
 print(df.describe().round(2))
 
-# 2. Text splitting/chunking
-# The ideal way of processing text before embedding it is still an active area of research.
-# A simple method I've found helpful is to break the text into chunks of sentences.
-# As in, chunk a page of text into groups of 5, 7, 10 or more sentences (these values are not set in stone and can be explored).
-# But we want to follow the workflow of: Ingest text -> split it into groups/chunks -> embed the groups/chunks -> use the embeddings
+# 2. Split the text into chunks of sentences
+"""
+[📄 Original Document (Text)]
+|
+|  (Text Splitting operation — rules: chunk size, overlap, separators)
+V
+ ┌─────────────────────────────────────────────────────────────────┐
+ │                  Text Splitting Process                          │
+ │ ┌────────────────┐  ┌────────────────┐  ┌────────────────┐     │
+ │ │  Chunk 1        │  │  Chunk 2        │  │  Chunk 3        │     │
+ │ │ (first segment) │  │ (overlapping or │  │ (next segment)  │     │
+ │ │                 │  │  consecutive)   │  │                 │     │
+ │ └────────────────┘  └────────────────┘  └────────────────┘     │
+ └─────────────────────────────────────────────────────────────────┘
+|
+|  (The output of splitting = Chunks)
+V
+[📦 Chunk 1] → [📦 Chunk 2] → [📦 Chunk 3] → …  
 
-# Some options for splitting text into sentences:
-# 1. Split into sentences with simple rules (e.g. split on ". " with text = text.split(". "), like we did above).
-# 2. Split into sentences with a natural language processing (NLP) library such as spaCy or nltk.
-
-# Why split into sentences? 
+(Chunks then go into: Embedding → Vector DB → Retrieval)
+"""
+# Why Text Splitting Matters in RAG?
 # 1. Easier to handle than larger pages of text (especially if pages are densely filled with text).
-# 2. Can get specific and find out which group of sentences were used to help within a RAG pipeline.
+# 2. LLMs have context window limits, so we need to split the text into smaller chunks.
+# 3. Can get specific and find out which group of sentences were used to help within a RAG pipeline.
 
+# How to split the text into sentences?
+# The ideal way of processing text before embedding it is still an active area of research.
+# A simple method is to break the text into chunks of sentences.
+# For example, chunk a page of text into groups of 5, 7, 10 or more sentences (these values are not set in stone and can be explored).
+
+"""
+Best Practices - 
+1. Choose Appropriate Chunk Size
+    . Key Parameters to Tune
+        - chunk_size: size of each chunk (in tokens or characters)
+        - chunk_overlap: overlap with previous chunk (for context continuity)
+    . Start with 500–1000 tokens or 200–500 words as a baseline.
+    . Chunk size should be large enough to capture a complete thought, but small enough to:
+        - Fit within your embedding model’s limits.
+        - Avoid diluting retrieval with irrelevant info.
+
+2. Use Chunk Overlap for Context Continuity
+    . Overlap 10–20% of the chunk size (e.g., if chunk_size = 1000 tokens → overlap = 100–200)
+    . This ensures that information near the boundaries of a chunk isn’t lost.
+    . Crucial for multi-sentence ideas and logical transitions.
+
+3. Split on Semantic or Structural Boundaries
+    . Split at natural language boundaries whenever possible:
+        - Paragraph breaks \n\n
+        - Section headers (#, ##, ===)
+        - Sentences (. or !)
+    . Avoid splitting mid-sentence or mid-code block.
+    . Use recursive splitters to attempt large separators first, then fallback to smaller ones.
+
+4. Optimize for Target Embedding Model
+    . Embedding models have context length limits (e.g., OpenAI text-embedding-ada-002 supports 8191 tokens)
+    . If your text exceeds this limit, you may need to split it into smaller chunks.
+    . If your text is too small, you may need to increase the chunk size.
+
+5. Consistency - Don’t mix different splitting rules for the same corpus.
+
+6. Avoid Overchunking or Underchunking
+    . Too small: Chunks lack context, leading to incomplete or hallucinated answers.
+    . Too large: Irrelevant content might be retrieved, and you’ll waste valuable retrieval slots.
+    . Balance is key.
+
+7. Keep Metadata with Chunks
+    . Always associate metadata with each chunk:
+    . Source filename
+    . Section title
+    . Page number
+    . Timestamp (for transcripts)
+    . Helps trace back or rerank results later.
+
+8. Document and Version Your Chunking Config
+    . Record your chunk size, overlap, separators, and splitter type.
+    . So future experiments and retrieval tests are reproducible.
+"""
+# Split into sentences with a natural language processing (NLP) library such as spaCy or nltk.
 print("\n")
-print("2. Splitting the text into sentences...\n")
+print("2. Splitting text into chunks of sentences...\n")
 # spaCy is an open-source library designed to break the text into sentences for NLP tasks.
 # Load the English language model
 nlp = spacy.load('en_core_web_sm')
@@ -106,11 +172,7 @@ print("Statistics after sentence splitting...")
 print(df.describe().round(2))
 
 # Chunking - Break down our list of sentences into smaller chunks.
-# Why do we do this?
-# 1. Easier to filter for RAG queries.
-# 2. The text chunks can fit into the context window of the embedding model.
-# 3. Framework such as Langchain which can help us with chunking as well.
-
+# Framework such as Langchain which can help us with chunking as well.
 # Define split size to turn a group of sentences into a chunk of text.
 num_sentences_per_chunk = 10 # 10 is arbitrary number, we can change it to 5, 7, 8.
 # Create a function to chunk the text
