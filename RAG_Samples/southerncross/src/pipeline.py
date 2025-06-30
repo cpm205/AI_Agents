@@ -95,7 +95,6 @@ V
 # 3. Can get specific and find out which group of sentences were used to help within a RAG pipeline.
 
 # How to split the text into sentences?
-# The ideal way of processing text before embedding it is still an active area of research.
 # A simple method is to break the text into chunks of sentences.
 # For example, chunk a page of text into groups of 5, 7, 10 or more sentences (these values are not set in stone and can be explored).
 
@@ -115,13 +114,14 @@ Best Practices -
     . This ensures that information near the boundaries of a chunk isn’t lost.
     . Crucial for multi-sentence ideas and logical transitions.
 
-3. Split on Semantic or Structural Boundaries
+3. Split
     . Split at natural language boundaries whenever possible:
         - Paragraph breaks \n\n
         - Section headers (#, ##, ===)
         - Sentences (. or !)
     . Avoid splitting mid-sentence or mid-code block.
     . Use recursive splitters to attempt large separators first, then fallback to smaller ones.
+    . Natural language processing (NLP) library such as spaCy or nltk can split into sentences.
 
 4. Optimize for Target Embedding Model
     . Embedding models have context length limits (e.g., OpenAI text-embedding-ada-002 supports 8191 tokens)
@@ -147,7 +147,7 @@ Best Practices -
     . Record your chunk size, overlap, separators, and splitter type.
     . So future experiments and retrieval tests are reproducible.
 """
-# Split into sentences with a natural language processing (NLP) library such as spaCy or nltk.
+
 print("\n")
 print("2. Splitting text into chunks of sentences...\n")
 # spaCy is an open-source library designed to break the text into sentences for NLP tasks.
